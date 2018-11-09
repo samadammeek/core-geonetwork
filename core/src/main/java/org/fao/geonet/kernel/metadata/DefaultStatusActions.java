@@ -23,17 +23,33 @@
 
 package org.fao.geonet.kernel.metadata;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
-import jeeves.server.UserSession;
-import jeeves.server.context.ServiceContext;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import org.fao.geonet.ApplicationContextHolder;
 import org.fao.geonet.constants.Params;
-import org.fao.geonet.domain.*;
+import org.fao.geonet.domain.AbstractMetadata;
+import org.fao.geonet.domain.ISODate;
+import org.fao.geonet.domain.Metadata;
+import org.fao.geonet.domain.Pair;
+import org.fao.geonet.domain.Profile;
+import org.fao.geonet.domain.ReservedOperation;
+import org.fao.geonet.domain.StatusValue;
+import org.fao.geonet.domain.User;
+import org.fao.geonet.domain.User_;
 import org.fao.geonet.kernel.DataManager;
+import org.fao.geonet.kernel.datamanager.IMetadataUtils;
 import org.fao.geonet.kernel.setting.SettingManager;
 import org.fao.geonet.kernel.setting.Settings;
-import org.fao.geonet.repository.MetadataRepository;
 import org.fao.geonet.repository.SortUtils;
 import org.fao.geonet.repository.StatusValueRepository;
 import org.fao.geonet.repository.UserRepository;
@@ -41,11 +57,11 @@ import org.fao.geonet.util.MailSender;
 import org.fao.geonet.util.XslUtil;
 import org.springframework.context.ApplicationContext;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
+
+import jeeves.server.UserSession;
+import jeeves.server.context.ServiceContext;
 
 public class DefaultStatusActions implements StatusActions {
 
@@ -248,13 +264,13 @@ public class DefaultStatusActions implements StatusActions {
         ArrayList<String> fields = new ArrayList<String>();
 
         Matcher m = metadataLuceneField.matcher(statusMetadataDetails);
-        Iterable<Metadata> mds = this.context.getBean(MetadataRepository.class).findAll(metadata);
+        Iterable<? extends AbstractMetadata> mds = this.context.getBean(IMetadataUtils.class).findAll(metadata);
 
         while (m.find()) {
             fields.add(m.group(1));
         }
 
-        for (Metadata md : mds) {
+        for (AbstractMetadata md : mds) {
             String curMdDetails = statusMetadataDetails;
             // First substitution for variables not stored in the index
             curMdDetails = curMdDetails.replace("{{serverurl}}", siteUrl);
@@ -319,11 +335,11 @@ public class DefaultStatusActions implements StatusActions {
         );
         String mdChanged = buildMetadataChangedMessage(metadataIds);
 
-        Iterable<Metadata> metadata = this.context.getBean(MetadataRepository.class).findAll(metadataIds);
+        Iterable<? extends AbstractMetadata> metadata = this.context.getBean(IMetadataUtils.class).findAll(metadataIds);
         List<User> owners = new ArrayList<User>();
         UserRepository userRepo = this.context.getBean(UserRepository.class);
 
-        for (Metadata md : metadata) {
+        for (AbstractMetadata md : metadata) {
             int ownerId = md.getSourceInfo().getOwner();
             owners.add(userRepo.findOne(ownerId));
         }

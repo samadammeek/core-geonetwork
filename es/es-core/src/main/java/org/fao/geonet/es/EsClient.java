@@ -43,8 +43,6 @@ import org.apache.http.nio.conn.SchemeIOSessionStrategy;
 import org.apache.http.nio.conn.ssl.SSLIOSessionStrategy;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.fao.geonet.utils.Log;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -61,8 +59,6 @@ import java.util.Map;
  * Client to connect to Elasticsearch
  */
 public class EsClient implements InitializingBean {
-    private static Logger LOGGER =  LoggerFactory.getLogger("geonetwork.harvest.wfs.features");
-
     private static EsClient instance;
 
     private JestClient client;
@@ -164,14 +160,14 @@ public class EsClient implements InitializingBean {
         return this;
     }
 
-    public boolean bulkRequest(String index, Map<String, String> docs) throws IOException {
+    public boolean bulkRequest(String index, String indexType, Map<String, String> docs) throws IOException {
         if (!activated) {
             return false;
         }
         boolean success = true;
         Bulk.Builder bulk = new Bulk.Builder()
             .defaultIndex(index)
-            .defaultType(index);
+            .defaultType(indexType);
 
         Iterator iterator = docs.entrySet().iterator();
         while (iterator.hasNext()) {
@@ -204,7 +200,7 @@ public class EsClient implements InitializingBean {
         return client.execute(bulk.build());
     }
 
-    public String deleteByQuery(String index, String query) throws Exception {
+    public String deleteByQuery(String index, String indexType, String query) throws Exception {
         if (!activated) {
             return "";
         }
@@ -215,7 +211,7 @@ public class EsClient implements InitializingBean {
 
         DeleteByQuery deleteAll = new DeleteByQuery.Builder(searchQuery)
             .addIndex(index)
-            .addType(index)
+            .addType(indexType)
             .build();
         final JestResult result = client.execute(deleteAll);
         if (result.isSucceeded()) {
@@ -262,12 +258,12 @@ public class EsClient implements InitializingBean {
                         return token.get("token").getAsString();
                     }
                 }
-                return fieldValue;
+                return "";
             } else {
-                return fieldValue;
+                return "";
             }
         } catch (Exception ex) {
-            return fieldValue;
+            return "";
         }
     }
 
